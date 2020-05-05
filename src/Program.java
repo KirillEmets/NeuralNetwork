@@ -1,11 +1,10 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
-
+//DASJHAJSK
 import java.awt.*;
 import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.*;
 
 public class Program extends JFrame
