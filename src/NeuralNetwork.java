@@ -1,65 +1,94 @@
+import java.util.List;
 import java.util.Random;
 
 public class NeuralNetwork {
-    Neuron[] inputLayer;
-    Neuron[] hiddenLayer;
-    Neuron[] outputLayer;
+    private Neuron[] inputLayer;
+    private Neuron[] hiddenLayer;
+    private Neuron[] hiddenLayer2;
+    public Neuron[] outputLayer;
 
     static final double A = 0.3;
-    static final double E = 0.7;
+    static final double E = 0.6;
+    static final int N = 3;
 
-    public NeuralNetwork(int inputCount, int hiddenCount, int outputCount) {
+    public NeuralNetwork(int inputCount, int hiddenCount, int hidden2Count, int outputCount) {
+        Neuron[][] layers = new Neuron[][]{inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
+        int[] sizes = new int[] {inputCount, hiddenCount, hidden2Count, outputCount, 0};
 
-        inputLayer = new Neuron[inputCount];
-        for (int i = 0; i < inputCount; i++) {
-            inputLayer[i] = new Neuron(i, hiddenCount);
+
+        for (int i = 0; i < layers.length; i++) {
+            layers[i] = new Neuron[sizes[i]];
+            for (int j = 0; j < sizes[i]; j++) {
+                layers[i][j] = new Neuron(j, sizes[i+1]);
+            }
         }
 
-        hiddenLayer = new Neuron[hiddenCount];
-        for (int i = 0; i < hiddenCount; i++) {
-            hiddenLayer[i] = new Neuron(i, outputCount);
-        }
-
-        outputLayer = new Neuron[outputCount];
-        for (int i = 0; i < outputCount; i++) {
-            outputLayer[i] = new Neuron(i, 0);
-        }
+        inputLayer = layers[0];
+        hiddenLayer = layers[1];
+        hiddenLayer2 = layers[2];
+        outputLayer = layers[3];
     }
 
-    public double[] getResult(double[] input) {
-        for (int i = 0; i < input.length; i++) {
+    private double[] calculateOutputs(double[] input) {
+        double[] outputs = new double[outputLayer.length];
+
+        for (int i = 0; i < input.length; i++) { //fill inputLayer output values
             inputLayer[i].output = input[i];
         }
 
-        for (Neuron neuron : hiddenLayer) {
-            neuron.getOutput(inputLayer);
+        Neuron[][] layers = new Neuron[][]{inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
+
+        for (int i = 1; i < layers.length; i++) {
+            for (Neuron n: layers[i]) {
+                n.getOutput(layers[i-1]);
+            }
         }
 
-        double[] outputs = new double[outputLayer.length];
-
         for (int i = 0; i < outputLayer.length; i++) {
-            outputs[i] = outputLayer[i].getOutput(hiddenLayer);
+            outputs[i] = outputLayer[i].output;
         }
 
         return outputs;
     }
 
-    void learn(double[][] inputs, double[][] outputs, int iterationsCount) {
-        for (int c = 0; c < iterationsCount; c++) {
-            for (int i = 0; i < inputs.length; i++) {
-                changeWeights(inputs[i], outputs[i]);
+    public double[][][] processPicture(double[][][] pixelArray) {
+        double[][][] arrayOfInputs = convertArrayToInputs(pixelArray);
+        double[][][] result = new double[pixelArray.length][pixelArray[0].length][3];
+
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[0].length; j++) {
+                result[i][j] = calculateOutputs(arrayOfInputs[i][j]);
+            }
+        }
+        return result;
+    }
+
+    private void learnOnPicture(double[][][] inputPic, double[][][] outputPic) {
+        double[][][] inputs = convertArrayToInputs(inputPic);
+        for (int i = 0; i < outputPic.length; i++) {
+            for (int j = 0; j < outputPic[0].length; j++) {
+                backPropagation(inputs[i][j], outputPic[i][j]);
             }
         }
     }
 
-    void changeWeights(double[] inputs, double[] ideal) {
-        double[] outs = getResult(inputs);
+    public void learnOnPictures(List<double[][][]> inputPics, List<double[][][]> outputPics, int iterationsCount) {
+        for (int i = 0; i < iterationsCount; i++) {
+            System.out.println(i + " of " + iterationsCount);
+            for (int j = 0; j < inputPics.size(); j++) {
+                learnOnPicture(inputPics.get(j), outputPics.get(j));
+            }
+        }
+    }
+
+    private void backPropagation(double[] inputs, double[] ideal) {
+        double[] outs = calculateOutputs(inputs);
         for (int i = 0; i < outputLayer.length; i++) {
             outputLayer[i].delta = (ideal[i] - outs[i]) * sigmoidDer(outs[i]);
         }
 
-        Neuron[][] layers = new Neuron[][]{outputLayer, hiddenLayer, inputLayer};
-        for (int l = 1; l < 3; l++) {
+        Neuron[][] layers = new Neuron[][]{outputLayer, hiddenLayer2, hiddenLayer, inputLayer};
+        for (int l = 1; l < layers.length; l++) {
             double sum;
             for (Neuron neuron : layers[l]) {
                 sum = 0;
@@ -76,9 +105,44 @@ public class NeuralNetwork {
         }
     }
 
-    double sigmoidDer(double x) {
+    private double sigmoidDer(double x) {
         return x * (1 - x);
     }
+
+    private double[][][] convertArrayToInputs(double[][][] pixels) {
+        int width = pixels.length;
+        int height = pixels[0].length;
+        double[][][] inputs = new double[width][height][N * N * 3];
+
+        int px = 0;
+        int py = 0;
+        int k = 0;
+
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                for (int x = -N/2; x < N/2f; x++) {
+                    for (int y = -N/2; y < N/2f; y++) {
+                        px = i + x;
+                        py = j + y;
+
+                        if(px < 0 || px >= width)
+                            px = i - x;
+                        if(py < 0 || py >= height)
+                            py = j - y;
+
+                        k = x + N/2 + (y + N/2) * N;
+
+                        inputs[i][j][k*3] = pixels[px][py][0];
+                        inputs[i][j][k*3+1] = pixels[px][py][1];
+                        inputs[i][j][k*3+2] = pixels[px][py][2];
+                    }
+                }
+            }
+        }
+
+        return inputs;
+    }
+
 }
 
 class Neuron {

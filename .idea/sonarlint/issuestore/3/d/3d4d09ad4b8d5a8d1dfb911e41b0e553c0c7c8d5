@@ -1,7 +1,12 @@
 
-]	java:S125"<This block of commented-out lines of code should be removed.(Çı§©úÿÿÿÿ8å‰Ñæ›.
-O
-java:S1128"-Remove this unused import 'java.util.Arrays'.(î–˜Éüÿÿÿÿ8ë´Ÿé›.
-Q	java:S110"<This class has 6 parents which is greater than 5 authorized.(ÒªÔ
-B
-java:S1948"-Make "loadedImage" transient or serializable.(³¢Ç
+Z	java:S106@"9Replace this use of System.out or System.err by a logger.(±Çãîùÿÿÿÿ8À£úÄŸ.
+m	java:S116"LRename this field "N" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Âˆª€ùÿÿÿÿ8èéí†.
+p
+java:S3776’"RRefactor this method to reduce its Cognitive Complexity from 22 to the 15 allowed.(ÿŠŠ8¯ôè„Ÿ.
+U	java:S106J"9Replace this use of System.out or System.err by a logger.(èö¸Ô8ö–îŠ.
+Q	java:S110"<This class has 6 parents which is greater than 5 authorized.(ÒªÔ
+C
+java:S1170"!Make this final field static too.(Âˆª€ùÿÿÿÿ8èéí†.
+Z	java:S106>"9Replace this use of System.out or System.err by a logger.(·Éë‰şÿÿÿÿ8¿òŞŠ.
+M
+java:S1128	"+Remove this unused import 'java.util.List'.(Õë±Äøÿÿÿÿ8‘ê•¥.
