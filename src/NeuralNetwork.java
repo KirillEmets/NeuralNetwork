@@ -1,20 +1,24 @@
+import java.io.*;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 public class NeuralNetwork {
+    static Logger log = Logger.getLogger(NeuralNetwork.class.getName());
     private Neuron[] inputLayer;
     private Neuron[] hiddenLayer;
     private Neuron[] hiddenLayer2;
-    public Neuron[] outputLayer;
+    private Neuron[] outputLayer;
 
     static final double A = 0.3;
     static final double E = 0.6;
     static final int N = 3;
 
     public NeuralNetwork(int inputCount, int hiddenCount, int hidden2Count, int outputCount) {
-        Neuron[][] layers = new Neuron[][]{inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
+        Neuron[][] layers = {inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
         int[] sizes = new int[] {inputCount, hiddenCount, hidden2Count, outputCount, 0};
-
 
         for (int i = 0; i < layers.length; i++) {
             layers[i] = new Neuron[sizes[i]];
@@ -143,9 +147,32 @@ public class NeuralNetwork {
         return inputs;
     }
 
+    public void saveWeights(String path) {
+        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path))) {
+            oos.writeObject(inputLayer);
+            oos.writeObject(hiddenLayer);
+            oos.writeObject(hiddenLayer2);
+            oos.writeObject(outputLayer);
+        }
+        catch (IOException e) {
+            log.log(Level.SEVERE, "Could not write the weights", e);
+        }
+    }
+
+    public void loadWeights(String path) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+            inputLayer = (Neuron[]) ois.readObject();
+            hiddenLayer = (Neuron[]) ois.readObject();
+            hiddenLayer2 = (Neuron[]) ois.readObject();
+            outputLayer = (Neuron[]) ois.readObject();
+        }
+        catch(IOException | ClassNotFoundException e) {
+            log.log(Level.SEVERE, "Could not load the weights", e);
+        }
+    }
 }
 
-class Neuron {
+class Neuron implements Serializable {
     static final Random r = new Random();
 
     final double[] weights;

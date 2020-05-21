@@ -5,7 +5,6 @@ import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.*;
 
 public class Program extends JFrame
@@ -36,7 +35,7 @@ public class Program extends JFrame
         setVisible(true);
 
 
-        BufferedImage toDisplay = readImage("/home/kirill/Pictures/Network/2.png");
+        BufferedImage toDisplay = readImage("/home/kirill/Pictures/Network/5.png");
 
         ArrayList<double[][][]> inputImages = new ArrayList<>();
         ArrayList<double[][][]> outputImages = new ArrayList<>();
@@ -47,17 +46,20 @@ public class Program extends JFrame
 
         NeuralNetwork neuralNetwork = new NeuralNetwork(N * N * 3, 5, 5, 3);
 
-        System.out.println("learn s");
-        neuralNetwork.learnOnPictures(inputImages, outputImages, 10);
-        System.out.println("learn f");
+        neuralNetwork.loadWeights("/home/kirill/weights.txt");
 
+        System.out.println("learning started");
+        neuralNetwork.learnOnPictures(inputImages, outputImages, 10);
+        System.out.println("learning finished");
+
+        neuralNetwork.saveWeights("/home/kirill/weights.txt");
 
         var result = neuralNetwork.processPicture(convertImageToPixelArray(toDisplay));
         System.out.println("got the picture");
 
         toDisplay = convertPixelArrayToImage(result);
 
-        setImage(toDisplay, toDisplay);
+        setImage(toDisplay);
     }
 
     BufferedImage readImage(String path) {
@@ -65,19 +67,15 @@ public class Program extends JFrame
             return ImageIO.read(new File(path));
         }
         catch (IOException e) {
-            log.log(Level.SEVERE,"Couldn't read the file: ".concat(path), e);
+            log.log(Level.SEVERE,"Couldn't read the image", e);
             return null;
         }
     }
 
-    void setImage(BufferedImage image, BufferedImage image2) {
+    void setImage(BufferedImage image) {
         if(image != null) {
             ImageIcon icon = new ImageIcon(image.getScaledInstance(image.getWidth(), image.getHeight(), Image.SCALE_SMOOTH));
             lbl.setIcon(icon);
-        }
-        if(image != null) {
-            ImageIcon icon = new ImageIcon(image2.getScaledInstance(image2.getWidth(), image2.getHeight(), Image.SCALE_SMOOTH));
-            lbl2.setIcon(icon);
         }
     }
 
