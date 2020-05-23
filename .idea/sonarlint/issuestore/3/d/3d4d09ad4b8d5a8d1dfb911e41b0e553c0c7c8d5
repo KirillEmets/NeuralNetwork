@@ -1,10 +1,0 @@
-
-C
-java:S1170"!Make this final field static too.(Âˆª€ùÿÿÿÿ8èéí†.
-O
-java:S1128"-Remove this unused import 'java.util.Arrays'.(î–˜Éüÿÿÿÿ8ÖÓğÆ¢.
-Q	java:S110"<This class has 6 parents which is greater than 5 authorized.(ÒªÔ
-Z	java:S1064"9Replace this use of System.out or System.err by a logger.(±Çãîùÿÿÿÿ8‹šæÂ¢.
-U	java:S1068"9Replace this use of System.out or System.err by a logger.(èö¸Ô8¹«—Å¢.
-Z	java:S1062"9Replace this use of System.out or System.err by a logger.(·Éë‰şÿÿÿÿ8‹šæÂ¢.
-m	java:S116"LRename this field "N" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Âˆª€ùÿÿÿÿ8èéí†.
