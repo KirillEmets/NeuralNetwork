@@ -1,19 +1,30 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.*;
 import java.awt.image.*;
+import java.io.Console;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.*;
 
 public class Program extends JFrame
 {
-    final int N = 3; //weight and height of unit in pixels
+    static final int N = 3; //weight and height of unit in pixels
     static Logger log = Logger.getLogger(Program.class.getName());
 
     JLabel lbl;
-    JLabel lbl2;
+
+    File currentLoadedFile = null;
+    transient BufferedImage currentImage;
+
+    transient NeuralNetwork network;
+    transient Console console;
+
+    transient Map<String, Consumer<String[]>> functionsWithParams;
+    transient Map<String, Runnable> functionsWithoutParams;
 
     public static void main(String[] args) {
         new Program();
@@ -21,60 +32,195 @@ public class Program extends JFrame
 
     public Program() {
         super("Picture");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         lbl = new JLabel();
-        lbl2 = new JLabel();
-
         JPanel contents = new JPanel();
         contents.add(lbl);
-        contents.add(lbl2);
-
         setContentPane(contents);
         setSize(600, 600);
-        setVisible(true);
 
+        functionsWithParams = Map.of(
+                "lw", this::exLoadWeights,
+                "sw", this::exSaveWeights,
+                "process", this::exProcess,
+                "train", this::exTrain,
+                "sp", this::exSavePicture,
+                "processDir", this::exProcess
+        );
+        functionsWithoutParams = Map.of(
+                "help", this::exShow,
+                "show", this::exShow
+        );
 
-        BufferedImage toDisplay = readImage("/home/kirill/Pictures/Network/5.png");
-
-        ArrayList<double[][][]> inputImages = new ArrayList<>();
-        ArrayList<double[][][]> outputImages = new ArrayList<>();
-        for (int i = 2; i <= 2; i++) {
-            inputImages.add(convertImageToPixelArray(readImage("/home/kirill/Pictures/Network/" + i + ".png")));
-            outputImages.add(convertImageToPixelArray(readImage("/home/kirill/Pictures/Network/" + i + ".png")));
-        }
-
-        NeuralNetwork neuralNetwork = new NeuralNetwork(N * N * 3, 5, 5, 3);
-
-        neuralNetwork.loadWeights("/home/kirill/weights.txt");
-
-        System.out.println("learning started");
-        neuralNetwork.learnOnPictures(inputImages, outputImages, 10);
-        System.out.println("learning finished");
-
-        neuralNetwork.saveWeights("/home/kirill/weights.txt");
-
-        var result = neuralNetwork.processPicture(convertImageToPixelArray(toDisplay));
-        System.out.println("got the picture");
-
-        toDisplay = convertPixelArrayToImage(result);
-
-        setImage(toDisplay);
+        network = new NeuralNetwork(N * N * 3, 5, 5, 3);
+        getKey();
     }
 
-    BufferedImage readImage(String path) {
+    void getKey() {
+        console = System.console();
+        if(console != null) {
+            String[] command = console.readLine().split(" ");
+            execute(command);
+        }
+        else {
+            log.log(Level.SEVERE, "No console found. Use java -jar to launch this from terminal");
+        }
+    }
+
+    void execute(String[] command) {
+        if(functionsWithParams.containsKey(command[0])) {
+            functionsWithParams.get(command[0]).accept(command);
+        }
+        else if(functionsWithoutParams.containsKey(command[0])) {
+            functionsWithoutParams.get(command[0]).run();
+        }
+        else {
+            System.out.println("No such function, use help.");
+        }
+
+        getKey();
+    }
+
+    void exLoadWeights(String[] command) {
+        if(command.length < 2)
+            System.out.println("Load path is required. Use 'load *path*'");
+        else {
+            if(network.loadWeights(new File(command[1]))) {
+                System.out.println("Weighs loaded.");
+            }
+        }
+    }
+
+    void exSaveWeights(String[] command) {
+        if (command.length < 2) {
+            if (currentLoadedFile != null) {
+                System.out.println("Want to save to the current loaded file? y/n");
+                String s = console.readLine();
+                if((s.equals("y") || s.equals("yes")) && network.saveWeights(currentLoadedFile)) {
+                    System.out.println("Weights saved.");
+                    return;
+                }
+            }
+            System.out.println("Load path is required. Use 'save *path*'.");
+        }
+        else {
+            network.saveWeights(new File(command[1]));
+        }
+    }
+
+    void exProcess(String[] command) {
+        if (command.length < 2) {
+            System.out.println("Picture path is required. Use 'process *path*'.");
+        }
+        else {
+            BufferedImage image = loadImageFromFile(new File(command[1]));
+            if(image != null) {
+                double[][][] picArray = network.processPicture(convertImageToPixelArray(image));
+                currentImage = convertPixelArrayToImage(picArray);
+                System.out.println("Image processed.");
+            }
+        }
+    }
+
+    void exTrain(String[] command) {
+        if (command.length < 4) {
+            System.out.println("Use 'train *directory with inputs* *directory with outputs* *count of iterations*'.");
+        }
+        else {
+            int count = 0;
+            try {
+                count = Integer.parseInt(command[3]) ;
+            }
+            catch (Exception e) {
+                return;
+            }
+
+            File[] inputImages = getImagesFromDirectory(new File(command[1]));
+            File[] outputImages = getImagesFromDirectory(new File(command[2]));
+
+            ArrayList<double[][][]> inputArray = new ArrayList<>();
+            ArrayList<double[][][]> outputArray = new ArrayList<>();
+
+            int i;
+            for (File file: inputImages) {
+                i = findFileWithName(outputImages, file.getName());
+                if(i != -1) {
+                    BufferedImage inputImage = loadImageFromFile(file);
+                    BufferedImage outputImage = loadImageFromFile(outputImages[i]);
+
+                    if (inputImage != null && outputImage != null) {
+                        if(checkForCompatibility(inputImage, outputImage)) {
+                            inputArray.add(convertImageToPixelArray(inputImage));
+                            outputArray.add(convertImageToPixelArray(outputImage));
+                        }
+                        else {
+                            System.out.println("File " + file.getName() + " doesn't match to it's pair.");
+                        }
+                    }
+                }
+                else {
+                    System.out.println("File " + file.getName() + " doesn't have a pair.");
+                }
+            }
+            network.trainOnPictures(inputArray, outputArray, count);
+            System.out.println("Training is finished.");
+        }
+    }
+
+    void exSavePicture(String[] command) {
+
+    }
+
+    void exShow() {
+        setVisible(true);
+        setImage(currentImage);
+    }
+
+    int findFileWithName(File[] files, String name) {
+        for (int i = 0; i < files.length; i++) {
+            if(files[i].getName().equals(name))
+                return i;
+        }
+        return -1;
+    }
+
+    boolean checkForCompatibility(BufferedImage a, BufferedImage b) {
+        return (a.getWidth() == b.getWidth() && a.getHeight() == b.getHeight());
+    }
+
+    File[] getImagesFromDirectory(File dir) {
+        String[] extensions = {".png",".jpg",".jpeg",".bmp"};
+        if(dir.isDirectory()) {
+            FileFilter filter = file -> {
+                for (String e: extensions) {
+                    if (file.getName().toLowerCase().endsWith(e))
+                        return true;
+                }
+                return false;
+            };
+
+            return dir.listFiles(filter);
+        }
+        else {
+            System.out.println("Path has to lead to directory");
+            return new File[] {};
+        }
+    }
+
+    BufferedImage loadImageFromFile(File file) {
+        BufferedImage image = null;
         try {
-            return ImageIO.read(new File(path));
+             image = ImageIO.read(file);
         }
         catch (IOException e) {
-            log.log(Level.SEVERE,"Couldn't read the image", e);
-            return null;
+            System.out.println("Error: Could not read the image from " + file.getName());
         }
+        return  image;
     }
 
     void setImage(BufferedImage image) {
         if(image != null) {
-            ImageIcon icon = new ImageIcon(image.getScaledInstance(image.getWidth(), image.getHeight(), Image.SCALE_SMOOTH));
+            ImageIcon icon = new ImageIcon(image);
             lbl.setIcon(icon);
         }
     }
