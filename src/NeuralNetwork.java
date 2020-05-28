@@ -67,7 +67,7 @@ public class NeuralNetwork {
         return result;
     }
 
-    private void learnOnPicture(double[][][] inputPic, double[][][] outputPic) {
+    private void trainOnPicture(double[][][] inputPic, double[][][] outputPic) {
         double[][][] inputs = convertArrayToInputs(inputPic);
         for (int i = 0; i < outputPic.length; i++) {
             for (int j = 0; j < outputPic[0].length; j++) {
@@ -76,11 +76,11 @@ public class NeuralNetwork {
         }
     }
 
-    public void learnOnPictures(List<double[][][]> inputPics, List<double[][][]> outputPics, int iterationsCount) {
+    public void trainOnPictures(List<double[][][]> inputPics, List<double[][][]> outputPics, int iterationsCount) {
         for (int i = 0; i < iterationsCount; i++) {
-            System.out.println(i + " of " + iterationsCount);
+            System.out.println("train: " + i + " of " + iterationsCount);
             for (int j = 0; j < inputPics.size(); j++) {
-                learnOnPicture(inputPics.get(j), outputPics.get(j));
+                trainOnPicture(inputPics.get(j), outputPics.get(j));
             }
         }
     }
@@ -147,8 +147,8 @@ public class NeuralNetwork {
         return inputs;
     }
 
-    public void saveWeights(String path) {
-        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path))) {
+    public boolean saveWeights(File file) {
+        try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeObject(inputLayer);
             oos.writeObject(hiddenLayer);
             oos.writeObject(hiddenLayer2);
@@ -156,11 +156,13 @@ public class NeuralNetwork {
         }
         catch (IOException e) {
             log.log(Level.SEVERE, "Could not write the weights", e);
+            return false;
         }
+        return true;
     }
 
-    public void loadWeights(String path) {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+    public boolean loadWeights(File file) {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             inputLayer = (Neuron[]) ois.readObject();
             hiddenLayer = (Neuron[]) ois.readObject();
             hiddenLayer2 = (Neuron[]) ois.readObject();
@@ -168,7 +170,9 @@ public class NeuralNetwork {
         }
         catch(IOException | ClassNotFoundException e) {
             log.log(Level.SEVERE, "Could not load the weights", e);
+            return false;
         }
+        return true;
     }
 }
 
@@ -176,11 +180,12 @@ class Neuron implements Serializable {
     static final Random r = new Random();
 
     final double[] weights;
-    double[] lastWeightsChanges;
-    double input;
-    double output;
-    double delta;
     int index;
+
+    transient double[] lastWeightsChanges;
+    transient double input = 0;
+    transient double output = 0;
+    transient double delta = 0;
 
     public Neuron(int index, int weightsCount) {
         weights = randomizedArray(weightsCount);
