@@ -12,7 +12,7 @@ import java.util.logging.*;
 
 public class Program extends JFrame
 {
-    static final int N = 3; //weight and height of unit in pixels
+    static final int N = 7; //weight and height of unit in pixels
     static Logger log = Logger.getLogger(Program.class.getName());
 
     JLabel lbl;
@@ -52,7 +52,7 @@ public class Program extends JFrame
                 "show", this::exShow
         );
 
-        network = new NeuralNetwork(N * N * 3, 5, 5, 3);
+        network = new NeuralNetwork(N * N * 3, 12, 12, 3);
         getKey();
     }
 
@@ -105,6 +105,7 @@ public class Program extends JFrame
         }
         else {
             network.saveWeights(new File(command[1]));
+            System.out.println("Weights saved.");
         }
     }
 
@@ -115,7 +116,7 @@ public class Program extends JFrame
         else {
             BufferedImage image = loadImageFromFile(new File(command[1]));
             if(image != null) {
-                double[][][] picArray = network.processPicture(convertImageToPixelArray(image));
+                float[][][] picArray = network.processPicture(convertImageToPixelArray(image));
                 currentImage = convertPixelArrayToImage(picArray);
                 System.out.println("Image processed.");
             }
@@ -138,15 +139,21 @@ public class Program extends JFrame
             File[] inputImages = getImagesFromDirectory(new File(command[1]));
             File[] outputImages = getImagesFromDirectory(new File(command[2]));
 
-            ArrayList<double[][][]> inputArray = new ArrayList<>();
-            ArrayList<double[][][]> outputArray = new ArrayList<>();
+            ArrayList<float[][][]> inputArray = new ArrayList<>();
+            ArrayList<float[][][]> outputArray = new ArrayList<>();
+
+            System.out.println("Got the pictures");
+
+            BufferedImage inputImage;
+            BufferedImage outputImage;
 
             int i;
             for (File file: inputImages) {
+                System.out.println(file.getName());
                 i = findFileWithName(outputImages, file.getName());
                 if(i != -1) {
-                    BufferedImage inputImage = loadImageFromFile(file);
-                    BufferedImage outputImage = loadImageFromFile(outputImages[i]);
+                    inputImage = loadImageFromFile(file);
+                    outputImage = loadImageFromFile(outputImages[i]);
 
                     if (inputImage != null && outputImage != null) {
                         if(checkForCompatibility(inputImage, outputImage)) {
@@ -162,6 +169,7 @@ public class Program extends JFrame
                     System.out.println("File " + file.getName() + " doesn't have a pair.");
                 }
             }
+            System.out.println("Training started");
             network.trainOnPictures(inputArray, outputArray, count);
             System.out.println("Training is finished.");
         }
@@ -225,26 +233,26 @@ public class Program extends JFrame
         }
     }
 
-    double[][][] convertImageToPixelArray(BufferedImage image) {
+    float[][][] convertImageToPixelArray(BufferedImage image) {
         final WritableRaster r = image.getRaster();
         final int width = r.getWidth();
         final int height = r.getHeight();
         int count = width*height;
 
-        double[] rawPixels = new double[count * 3];
+        float[] rawPixels = new float[count * 3];
         r.getPixels(0, 0, width, height, rawPixels);
 
-        double[][][] pixels = new double[width][height][3];
+        float[][][] pixels = new float[width][height][3];
         for (int i = 0; i < count; i++) {
-            pixels[i % width][i / width][0] = (rawPixels[i * 3]) / 255D;
-            pixels[i % width][i / width][1] = (rawPixels[i * 3 + 1]) / 255D;
-            pixels[i % width][i / width][2] = (rawPixels[i * 3 + 2]) / 255D;
+            pixels[i % width][i / width][0] = (rawPixels[i * 3]) / 255f;
+            pixels[i % width][i / width][1] = (rawPixels[i * 3 + 1]) / 255f;
+            pixels[i % width][i / width][2] = (rawPixels[i * 3 + 2]) / 255f;
         }
 
         return pixels;
     }
 
-    BufferedImage convertPixelArrayToImage(double[][][] arrayPic) {
+    BufferedImage convertPixelArrayToImage(float[][][] arrayPic) {
         int w = arrayPic.length;
         int h = arrayPic[0].length;
         int[] rawPixels = new int[w * h * 3];
