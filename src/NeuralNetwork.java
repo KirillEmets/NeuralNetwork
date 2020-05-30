@@ -12,9 +12,9 @@ public class NeuralNetwork {
     private Neuron[] hiddenLayer2;
     private Neuron[] outputLayer;
 
-    static final double A = 0.3;
-    static final double E = 0.6;
-    static final int N = 3;
+    static final float A = 0.3f;
+    static final float E = 0.6f;
+    static final int N = 7;
 
     public NeuralNetwork(int inputCount, int hiddenCount, int hidden2Count, int outputCount) {
         Neuron[][] layers = {inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
@@ -33,8 +33,8 @@ public class NeuralNetwork {
         outputLayer = layers[3];
     }
 
-    private double[] calculateOutputs(double[] input) {
-        double[] outputs = new double[outputLayer.length];
+    private float[] calculateOutputs(float[] input) {
+        float[] outputs = new float[outputLayer.length];
 
         for (int i = 0; i < input.length; i++) { //fill inputLayer output values
             inputLayer[i].output = input[i];
@@ -55,96 +55,91 @@ public class NeuralNetwork {
         return outputs;
     }
 
-    public double[][][] processPicture(double[][][] pixelArray) {
-        double[][][] arrayOfInputs = convertArrayToInputs(pixelArray);
-        double[][][] result = new double[pixelArray.length][pixelArray[0].length][3];
+    public float[][][] processPicture(float[][][] pixelArray) {
+        float[][][] result = new float[pixelArray.length][pixelArray[0].length][3];
 
         for (int i = 0; i < result.length; i++) {
             for (int j = 0; j < result[0].length; j++) {
-                result[i][j] = calculateOutputs(arrayOfInputs[i][j]);
+                result[i][j] = calculateOutputs(getInputForPixel(i, j, pixelArray));
             }
         }
         return result;
     }
 
-    private void trainOnPicture(double[][][] inputPic, double[][][] outputPic) {
-        double[][][] inputs = convertArrayToInputs(inputPic);
+    private void trainOnPicture(float[][][] inputPic, float[][][] outputPic) {
         for (int i = 0; i < outputPic.length; i++) {
             for (int j = 0; j < outputPic[0].length; j++) {
-                backPropagation(inputs[i][j], outputPic[i][j]);
+                backPropagation(getInputForPixel(i, j, inputPic), outputPic[i][j]);
             }
         }
     }
 
-    public void trainOnPictures(List<double[][][]> inputPics, List<double[][][]> outputPics, int iterationsCount) {
+    public void trainOnPictures(List<float[][][]> inputPics, List<float[][][]> outputPics, int iterationsCount) {
+        int n = iterationsCount*inputPics.size();
+        int k = 1;
         for (int i = 0; i < iterationsCount; i++) {
-            System.out.println("train: " + i + " of " + iterationsCount);
             for (int j = 0; j < inputPics.size(); j++) {
                 trainOnPicture(inputPics.get(j), outputPics.get(j));
+                System.out.println("train: " + k + " of " + n);
+                k++;
             }
         }
     }
 
-    private void backPropagation(double[] inputs, double[] ideal) {
-        double[] outs = calculateOutputs(inputs);
+    private void backPropagation(float[] inputs, float[] ideal) {
+        float[] outs = calculateOutputs(inputs);
         for (int i = 0; i < outputLayer.length; i++) {
-            outputLayer[i].delta = (ideal[i] - outs[i]) * sigmoidDer(outs[i]);
+            outputLayer[i].delta = (ideal[i] - outs[i]) * activationDerivative(outs[i]);
         }
+
+        float grad;
+        float delta;
+        float sum;
 
         Neuron[][] layers = new Neuron[][]{outputLayer, hiddenLayer2, hiddenLayer, inputLayer};
         for (int l = 1; l < layers.length; l++) {
-            double sum;
             for (Neuron neuron : layers[l]) {
                 sum = 0;
                 for (int j = 0; j < layers[l-1].length; j++) {
                     sum += neuron.weights[j] * layers[l-1][j].delta ;
 
-                    double grad = neuron.output * layers[l-1][j].delta;
-                    double delta = E*grad + A *neuron.lastWeightsChanges[j];
+                    grad = neuron.output * layers[l-1][j].delta;
+                    delta = E*grad + A *neuron.lastWeightsChanges[j];
                     neuron.lastWeightsChanges[j] = delta;
                     neuron.weights[j] += delta;
                 }
-                neuron.delta = sum * sigmoidDer(neuron.output);
+                neuron.delta = sum * activationDerivative(neuron.output);
             }
         }
     }
 
-    private double sigmoidDer(double x) {
+    private float activationDerivative(float x) {
         return x * (1 - x);
     }
 
-    private double[][][] convertArrayToInputs(double[][][] pixels) {
-        int width = pixels.length;
-        int height = pixels[0].length;
-        double[][][] inputs = new double[width][height][N * N * 3];
+    private float[] getInputForPixel(int sx, int sy, float[][][] pixels) {
+        float[] input = new float[N*N*3];
+        int px;
+        int py;
+        int k;
+        for (int x = -N/2; x < N/2f; x++) {
+            for (int y = -N/2; y < N/2f; y++) {
+                px = sx + x;
+                py = sy + y;
 
-        int px = 0;
-        int py = 0;
-        int k = 0;
+                if(px < 0 || px >= pixels.length)
+                    px = sx - x;
+                if(py < 0 || py >= pixels[0].length)
+                    py = sy - y;
 
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i < width; i++) {
-                for (int x = -N/2; x < N/2f; x++) {
-                    for (int y = -N/2; y < N/2f; y++) {
-                        px = i + x;
-                        py = j + y;
+                k = x + N/2 + (y + N/2) * N;
 
-                        if(px < 0 || px >= width)
-                            px = i - x;
-                        if(py < 0 || py >= height)
-                            py = j - y;
-
-                        k = x + N/2 + (y + N/2) * N;
-
-                        inputs[i][j][k*3] = pixels[px][py][0];
-                        inputs[i][j][k*3+1] = pixels[px][py][1];
-                        inputs[i][j][k*3+2] = pixels[px][py][2];
-                    }
-                }
+                input[k*3] = pixels[px][py][0];
+                input[k*3+1] = pixels[px][py][1];
+                input[k*3+2] = pixels[px][py][2];
             }
         }
-
-        return inputs;
+        return input;
     }
 
     public boolean saveWeights(File file) {
@@ -179,38 +174,38 @@ public class NeuralNetwork {
 class Neuron implements Serializable {
     static final Random r = new Random();
 
-    final double[] weights;
+    final float[] weights;
     int index;
 
-    transient double[] lastWeightsChanges;
-    transient double input = 0;
-    transient double output = 0;
-    transient double delta = 0;
+    transient float[] lastWeightsChanges;
+    transient float input = 0;
+    transient float output = 0;
+    transient float delta = 0;
 
     public Neuron(int index, int weightsCount) {
         weights = randomizedArray(weightsCount);
-        lastWeightsChanges = new double[weightsCount];
+        lastWeightsChanges = new float[weightsCount];
         this.index = index;
     }
 
-    public double getOutput(Neuron[] prevLayer) {
-        double res = 0;
+    public float getOutput(Neuron[] prevLayer) {
+        float res = 0;
         for (Neuron previous : prevLayer) {
             res += previous.output * previous.weights[index];
         }
         input = res;
-        output = f(res);
+        output = activation(res);
         return output;
     }
 
-    double f(double x) {
-        return 1 / (1 + Math.exp(-x));
+    float activation(float x) {
+        return 1 / (1 + (float)Math.exp(-x));
     }
 
-    double[] randomizedArray(int c) {
-        double[] res = new double[c];
+    float[] randomizedArray(int c) {
+        float[] res = new float[c];
         for (int i = 0; i < c; i++) {
-            res[i] = r.nextDouble();
+            res[i] = r.nextFloat();
         }
 
         return res;
