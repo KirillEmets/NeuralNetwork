@@ -14,11 +14,11 @@ public class NeuralNetwork {
 
     static final float A = 0.3f;
     static final float E = 0.6f;
-    static final int N = 7;
+    static final int N = 3;
 
-    public NeuralNetwork(int inputCount, int hiddenCount, int hidden2Count, int outputCount) {
-        Neuron[][] layers = {inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
-        int[] sizes = new int[] {inputCount, hiddenCount, hidden2Count, outputCount, 0};
+    public NeuralNetwork(int inputCount, int hiddenCount, int hiddenCount2, int outputCount) {
+        int[] sizes = new int[] {inputCount + 1, hiddenCount, hiddenCount2, outputCount, 0};
+        Neuron[][] layers = new Neuron[sizes.length][];
 
         for (int i = 0; i < layers.length; i++) {
             layers[i] = new Neuron[sizes[i]];
@@ -55,12 +55,12 @@ public class NeuralNetwork {
         return outputs;
     }
 
-    public float[][][] processPicture(float[][][] pixelArray) {
-        float[][][] result = new float[pixelArray.length][pixelArray[0].length][3];
+    public float[][][] processPicture(float[][][] picture) {
+        float[][][] result = new float[picture.length][picture[0].length][3];
 
         for (int i = 0; i < result.length; i++) {
             for (int j = 0; j < result[0].length; j++) {
-                result[i][j] = calculateOutputs(getInputForPixel(i, j, pixelArray));
+                result[i][j] = calculateOutputs(getInputForPixel(i, j, picture));
             }
         }
         return result;
@@ -86,10 +86,10 @@ public class NeuralNetwork {
         }
     }
 
-    private void backPropagation(float[] inputs, float[] ideal) {
+    private void backPropagation(float[] inputs, float[] idealOutputs) {
         float[] outs = calculateOutputs(inputs);
         for (int i = 0; i < outputLayer.length; i++) {
-            outputLayer[i].delta = (ideal[i] - outs[i]) * activationDerivative(outs[i]);
+            outputLayer[i].delta = (idealOutputs[i] - outs[i]) * activationDerivative(outs[i]);
         }
 
         float grad;
@@ -117,7 +117,7 @@ public class NeuralNetwork {
         return x * (1 - x);
     }
 
-    private float[] getInputForPixel(int sx, int sy, float[][][] pixels) {
+    private float[] getInputForPixel(int sx, int sy, float[][][] picture) {
         float[] input = new float[N*N*3];
         int px;
         int py;
@@ -127,16 +127,16 @@ public class NeuralNetwork {
                 px = sx + x;
                 py = sy + y;
 
-                if(px < 0 || px >= pixels.length)
+                if(px < 0 || px >= picture.length)
                     px = sx - x;
-                if(py < 0 || py >= pixels[0].length)
+                if(py < 0 || py >= picture[0].length)
                     py = sy - y;
 
                 k = x + N/2 + (y + N/2) * N;
 
-                input[k*3] = pixels[px][py][0];
-                input[k*3+1] = pixels[px][py][1];
-                input[k*3+2] = pixels[px][py][2];
+                input[k*3] = picture[px][py][0];
+                input[k*3+1] = picture[px][py][1];
+                input[k*3+2] = picture[px][py][2];
             }
         }
         return input;
@@ -188,14 +188,13 @@ class Neuron implements Serializable {
         this.index = index;
     }
 
-    public float getOutput(Neuron[] prevLayer) {
+    public void getOutput(Neuron[] prevLayer) {
         float res = 0;
         for (Neuron previous : prevLayer) {
             res += previous.output * previous.weights[index];
         }
         input = res;
         output = activation(res);
-        return output;
     }
 
     float activation(float x) {
