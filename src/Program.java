@@ -5,14 +5,13 @@ import java.io.Console;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.*;
 
 public class Program extends JFrame
 {
-    static final int N = 7; //weight and height of unit in pixels
+    static final int N = 3; //weight and height of unit in pixels
     static Logger log = Logger.getLogger(Program.class.getName());
 
     JLabel lbl;
@@ -52,7 +51,7 @@ public class Program extends JFrame
                 "show", this::exShow
         );
 
-        network = new NeuralNetwork(N * N * 3, 12, 12, 3);
+        network = new NeuralNetwork(N * N * 3, 10, 10, 3);
         getKey();
     }
 
@@ -133,44 +132,36 @@ public class Program extends JFrame
                 count = Integer.parseInt(command[3]) ;
             }
             catch (Exception e) {
+                System.out.println("4th parameter must be a number.");
                 return;
             }
 
             File[] inputImages = getImagesFromDirectory(new File(command[1]));
             File[] outputImages = getImagesFromDirectory(new File(command[2]));
 
-            ArrayList<float[][][]> inputArray = new ArrayList<>();
-            ArrayList<float[][][]> outputArray = new ArrayList<>();
-
-            System.out.println("Got the pictures");
-
-            BufferedImage inputImage;
-            BufferedImage outputImage;
-
-            int i;
-            for (File file: inputImages) {
-                System.out.println(file.getName());
-                i = findFileWithName(outputImages, file.getName());
-                if(i != -1) {
-                    inputImage = loadImageFromFile(file);
-                    outputImage = loadImageFromFile(outputImages[i]);
-
-                    if (inputImage != null && outputImage != null) {
-                        if(checkForCompatibility(inputImage, outputImage)) {
-                            inputArray.add(convertImageToPixelArray(inputImage));
-                            outputArray.add(convertImageToPixelArray(outputImage));
+            float[][][] inputPicture;
+            float[][][] outputPicture;
+            System.out.println("Training started");
+            for (int c = 0; c < count; c++) {
+                int i;
+                for (File file : inputImages) {
+                    System.out.println(file.getName());
+                    i = findFileWithName(outputImages, file.getName());
+                    if (i != -1) {
+                        inputPicture = convertImageToPixelArray(loadImageFromFile(file));
+                        outputPicture = convertImageToPixelArray(loadImageFromFile(outputImages[i]));
+                        if (checkForCompatibility(inputPicture, outputPicture)) {
+                            network.trainOnPicture(inputPicture, outputPicture);
                         }
                         else {
                             System.out.println("File " + file.getName() + " doesn't match to it's pair.");
                         }
                     }
-                }
-                else {
-                    System.out.println("File " + file.getName() + " doesn't have a pair.");
+                    else {
+                        System.out.println("File " + file.getName() + " doesn't have a pair.");
+                    }
                 }
             }
-            System.out.println("Training started");
-            network.trainOnPictures(inputArray, outputArray, count);
             System.out.println("Training is finished.");
         }
     }
@@ -192,8 +183,8 @@ public class Program extends JFrame
         return -1;
     }
 
-    boolean checkForCompatibility(BufferedImage a, BufferedImage b) {
-        return (a.getWidth() == b.getWidth() && a.getHeight() == b.getHeight());
+    boolean checkForCompatibility(float[][][] a, float[][][] b) {
+        return (a.length == b.length && a[0].length == b[0].length);
     }
 
     File[] getImagesFromDirectory(File dir) {
@@ -234,6 +225,9 @@ public class Program extends JFrame
     }
 
     float[][][] convertImageToPixelArray(BufferedImage image) {
+        if(image == null) {
+            return null;
+        }
         final WritableRaster r = image.getRaster();
         final int width = r.getWidth();
         final int height = r.getHeight();

@@ -1,5 +1,4 @@
 import java.io.*;
-import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,8 +11,8 @@ public class NeuralNetwork {
     private Neuron[] hiddenLayer2;
     private Neuron[] outputLayer;
 
-    static final float A = 0.3f;
-    static final float E = 0.6f;
+    static final float A = 0.0f;
+    static final float E = 0.1f;
     static final int N = 3;
 
     public NeuralNetwork(int inputCount, int hiddenCount, int hiddenCount2, int outputCount) {
@@ -66,22 +65,10 @@ public class NeuralNetwork {
         return result;
     }
 
-    private void trainOnPicture(float[][][] inputPic, float[][][] outputPic) {
+    public void trainOnPicture(float[][][] inputPic, float[][][] outputPic) {
         for (int i = 0; i < outputPic.length; i++) {
             for (int j = 0; j < outputPic[0].length; j++) {
                 backPropagation(getInputForPixel(i, j, inputPic), outputPic[i][j]);
-            }
-        }
-    }
-
-    public void trainOnPictures(List<float[][][]> inputPics, List<float[][][]> outputPics, int iterationsCount) {
-        int n = iterationsCount*inputPics.size();
-        int k = 1;
-        for (int i = 0; i < iterationsCount; i++) {
-            for (int j = 0; j < inputPics.size(); j++) {
-                trainOnPicture(inputPics.get(j), outputPics.get(j));
-                System.out.println("train: " + k + " of " + n);
-                k++;
             }
         }
     }
