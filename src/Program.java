@@ -16,7 +16,8 @@ public class Program extends JFrame
 
   JLabel lbl;
 
-  File currentLoadedFile = null;
+  File currentLoadedWeights = null;
+  File currentLoadedPicture = null;
   transient BufferedImage currentImage;
 
   transient NeuralNetwork network;
@@ -43,13 +44,13 @@ public class Program extends JFrame
             "sw", this::exSaveWeights,
             "process", this::exProcess,
             "train", this::exTrain,
-            "sp", this::exSavePicture,
             "processDir", this::exProcess
     );
     functionsWithoutParams = Map.of(
             "help", this::exShow,
-            "show", this::exShow
-    );
+            "show", this::exShow,
+            "sp", this::exSavePicture
+            );
 
     network = new NeuralNetwork(N * N * 3, 10, 10, 3);
     getCommand();
@@ -93,10 +94,10 @@ public class Program extends JFrame
 
   void exSaveWeights(String[] command) {
     if (command.length < 2) {
-      if (currentLoadedFile != null) {
+      if (currentLoadedWeights != null) {
         System.out.println("Want to save to the current loaded file? y/n");
         String s = console.readLine();
-        if((s.equals("y") || s.equals("yes")) && network.saveWeights(currentLoadedFile)) {
+        if((s.equals("y") || s.equals("yes")) && network.saveWeights(currentLoadedWeights)) {
           System.out.println("Weights saved.");
           return;
         }
@@ -114,10 +115,12 @@ public class Program extends JFrame
       System.out.println("Picture path is required. Use 'process *path*'.");
     }
     else {
-      BufferedImage image = loadImageFromFile(new File(command[1]));
+      File file = new File(command[1]);
+      BufferedImage image = loadImageFromFile(file);
       if(image != null) {
         float[][][] picArray = network.processPicture(convertImageToPixelArray(image));
         currentImage = convertPixelArrayToImage(picArray);
+        currentLoadedPicture = file;
         System.out.println("Image processed.");
       }
     }
@@ -167,8 +170,20 @@ public class Program extends JFrame
     }
   }
 
-  void exSavePicture(String[] command) {
-
+  void exSavePicture() {
+    if (currentLoadedPicture != null) {
+      File file = new File(currentLoadedPicture.getPath() + " (copy)");
+      try {
+        ImageIO.write(currentImage, "jpg", file);
+        System.out.println("Image saved.");
+      }
+      catch (IOException e) {
+        System.out.println("Could not save the file.");
+      }
+    }
+    else {
+      System.out.println("You need to process a picture first.");
+    }
   }
 
   void exShow() {
