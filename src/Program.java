@@ -148,7 +148,7 @@ public class Program extends JFrame
     for (File file : images) {
       loadedImage = loadImageFromFile(file);
       float[][][] pic = network.processPicture(convertImageToPixelArray(loadedImage));
-      File toSave = new File(newFolder.getPath() + "/" + file.getName());
+      File toSave = new File(newFolder.getPath(), file.getName());
       saveImage(toSave, convertPixelArrayToImage(pic));
     }
     System.out.println("Done.");
@@ -156,7 +156,7 @@ public class Program extends JFrame
 
   void exTrain(String[] command) {
     if (command.length < 4) {
-      System.out.println("Use 'train *directory with inputs* *directory with outputs* *count of iterations*'.");
+      System.out.println("Use 'train *folder with inputs* *folder with outputs* *count of iterations*'.");
       return;
     }
     int count = 0;
