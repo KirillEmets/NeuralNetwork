@@ -44,7 +44,7 @@ public class Program extends JFrame
             "sw", this::exSaveWeights,
             "process", this::exProcess,
             "train", this::exTrain,
-            "processDir", this::exProcess
+            "pf", this::exProcessFolder
     );
     functionsWithoutParams = Map.of(
             "help", this::exShow,
@@ -126,6 +126,35 @@ public class Program extends JFrame
     }
   }
 
+  void exProcessFolder(String[] command) {
+    if (command.length < 2) {
+      System.out.println("Folder path is required. Use 'pf *path to folder*'.");
+      return;
+    }
+
+    File folder = new File(command[1]);
+    if(!folder.isDirectory()) {
+      System.out.println("Path must lead to a directory.");
+      return;
+    }
+
+    File newFolder = new File(folder.getAbsolutePath() + " (result)");
+    if (!newFolder.exists() && !newFolder.mkdir()) {
+      System.out.println("Directory cannot be created.");
+      return;
+    }
+
+    File[] images = getImagesFromDirectory(folder);
+    BufferedImage loadedImage = null;
+    for (File file : images) {
+      loadedImage = loadImageFromFile(file);
+      float[][][] pic = network.processPicture(convertImageToPixelArray(loadedImage));
+      File toSave = new File(newFolder.getPath() + "/" + file.getName());
+      saveImage(toSave, convertPixelArrayToImage(pic));
+    }
+    System.out.println("Done.");
+  }
+
   void exTrain(String[] command) {
     if (command.length < 4) {
       System.out.println("Use 'train *directory with inputs* *directory with outputs* *count of iterations*'.");
@@ -173,13 +202,7 @@ public class Program extends JFrame
   void exSavePicture() {
     if (currentLoadedPicture != null) {
       File file = new File(currentLoadedPicture.getPath() + " (copy)");
-      try {
-        ImageIO.write(currentImage, "jpg", file);
-        System.out.println("Image saved.");
-      }
-      catch (IOException e) {
-        System.out.println("Could not save the file.");
-      }
+      saveImage(file, currentImage);
     }
     else {
       System.out.println("You need to process a picture first.");
@@ -189,6 +212,18 @@ public class Program extends JFrame
   void exShow() {
     setVisible(true);
     setImage(currentImage);
+  }
+
+  boolean saveImage(File file, BufferedImage image) {
+    try {
+      ImageIO.write(image, "jpg", file);
+      System.out.println(file.getName() + " saved.");
+      return true;
+    }
+    catch (IOException e) {
+      System.out.println("Could not save the file.");
+      return false;
+    }
   }
 
   int findFileWithName(File[] files, String name) {
@@ -217,7 +252,7 @@ public class Program extends JFrame
       return dir.listFiles(filter);
     }
     else {
-      System.out.println("Path has to lead to directory");
+      System.out.println("Path has to lead to a directory");
       return new File[] {};
     }
   }
