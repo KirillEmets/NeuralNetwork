@@ -52,10 +52,10 @@ public class Program extends JFrame
         );
 
         network = new NeuralNetwork(N * N * 3, 10, 10, 3);
-        getKey();
+        getCommand();
     }
 
-    void getKey() {
+    void getCommand() {
         console = System.console();
         if(console != null) {
             String[] command = console.readLine().split(" ");
@@ -77,7 +77,7 @@ public class Program extends JFrame
             System.out.println("No such function, use help.");
         }
 
-        getKey();
+        getCommand();
     }
 
     void exLoadWeights(String[] command) {
