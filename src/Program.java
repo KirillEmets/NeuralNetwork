@@ -58,13 +58,13 @@ public class Program extends JFrame
 
   void getCommand() {
     console = System.console();
-    if(console != null) {
-      String[] command = console.readLine().split(" ");
-      execute(command);
-    }
-    else {
+    if (console == null) {
       log.log(Level.SEVERE, "No console found. Use java -jar to launch this from terminal");
+      return;
     }
+
+    String[] command = console.readLine().split(" ");
+    execute(command);
   }
 
   void execute(String[] command) {
@@ -82,13 +82,12 @@ public class Program extends JFrame
   }
 
   void exLoadWeights(String[] command) {
-    if(command.length < 2) {
+    if (command.length < 2) {
       System.out.println("Load path is required. Use 'load *path*'");
+      return;
     }
-    else {
-      if(network.loadWeights(new File(command[1]))) {
-        System.out.println("Weighs loaded.");
-      }
+    if (network.loadWeights(new File(command[1]))) {
+      System.out.println("Weighs loaded.");
     }
   }
 
@@ -97,32 +96,32 @@ public class Program extends JFrame
       if (currentLoadedWeights != null) {
         System.out.println("Want to save to the current loaded file? y/n");
         String s = console.readLine();
-        if((s.equals("y") || s.equals("yes")) && network.saveWeights(currentLoadedWeights)) {
+        if ((s.equals("y") || s.equals("yes")) && network.saveWeights(currentLoadedWeights)) {
           System.out.println("Weights saved.");
           return;
         }
       }
       System.out.println("Load path is required. Use 'save *path*'.");
+      return;
     }
-    else {
-      network.saveWeights(new File(command[1]));
-      System.out.println("Weights saved.");
-    }
+
+    network.saveWeights(new File(command[1]));
+    System.out.println("Weights saved.");
   }
 
   void exProcess(String[] command) {
     if (command.length < 2) {
       System.out.println("Picture path is required. Use 'process *path*'.");
+      return;
     }
-    else {
-      File file = new File(command[1]);
-      BufferedImage image = loadImageFromFile(file);
-      if(image != null) {
-        float[][][] picArray = network.processPicture(convertImageToPixelArray(image));
-        currentImage = convertPixelArrayToImage(picArray);
-        currentLoadedPicture = file;
-        System.out.println("Image processed.");
-      }
+
+    File file = new File(command[1]);
+    BufferedImage image = loadImageFromFile(file);
+    if (image != null) {
+      float[][][] picArray = network.processPicture(convertImageToPixelArray(image));
+      currentImage = convertPixelArrayToImage(picArray);
+      currentLoadedPicture = file;
+      System.out.println("Image processed.");
     }
   }
 
@@ -158,55 +157,51 @@ public class Program extends JFrame
   void exTrain(String[] command) {
     if (command.length < 4) {
       System.out.println("Use 'train *directory with inputs* *directory with outputs* *count of iterations*'.");
+      return;
     }
-    else {
-      int count = 0;
-      try {
-        count = Integer.parseInt(command[3]) ;
-      }
-      catch (Exception e) {
-        System.out.println("4th parameter must be a number.");
-        return;
-      }
+    int count = 0;
+    try {
+      count = Integer.parseInt(command[3]);
+    } catch (Exception e) {
+      System.out.println("4th parameter must be a number.");
+      return;
+    }
 
-      File[] inputImages = getImagesFromDirectory(new File(command[1]));
-      File[] outputImages = getImagesFromDirectory(new File(command[2]));
+    File[] inputImages = getImagesFromDirectory(new File(command[1]));
+    File[] outputImages = getImagesFromDirectory(new File(command[2]));
 
-      float[][][] inputPicture;
-      float[][][] outputPicture;
-      System.out.println("Training started");
-      for (int c = 0; c < count; c++) {
-        int i;
-        for (File file : inputImages) {
-          System.out.println(file.getName());
-          i = findFileWithName(outputImages, file.getName());
-          if (i != -1) {
-            inputPicture = convertImageToPixelArray(loadImageFromFile(file));
-            outputPicture = convertImageToPixelArray(loadImageFromFile(outputImages[i]));
-            if (checkForCompatibility(inputPicture, outputPicture)) {
-              network.trainOnPicture(inputPicture, outputPicture);
-            }
-            else {
-              System.out.println("File " + file.getName() + " doesn't match to it's pair.");
-            }
+    float[][][] inputPicture;
+    float[][][] outputPicture;
+    System.out.println("Training started");
+    for (int c = 0; c < count; c++) {
+      int i;
+      for (File file : inputImages) {
+        System.out.println(file.getName());
+        i = findFileWithName(outputImages, file.getName());
+        if (i != -1) {
+          inputPicture = convertImageToPixelArray(loadImageFromFile(file));
+          outputPicture = convertImageToPixelArray(loadImageFromFile(outputImages[i]));
+          if (checkForCompatibility(inputPicture, outputPicture)) {
+            network.trainOnPicture(inputPicture, outputPicture);
+          } else {
+            System.out.println("File " + file.getName() + " doesn't match to it's pair.");
           }
-          else {
-            System.out.println("File " + file.getName() + " doesn't have a pair.");
-          }
+        } else {
+          System.out.println("File " + file.getName() + " doesn't have a pair.");
         }
       }
-      System.out.println("Training is finished.");
     }
+    System.out.println("Training is finished.");
   }
 
   void exSavePicture() {
-    if (currentLoadedPicture != null) {
-      File file = new File(currentLoadedPicture.getPath() + " (copy)");
-      saveImage(file, currentImage);
-    }
-    else {
+    if (currentLoadedPicture == null)  {
       System.out.println("You need to process a picture first.");
+      return;
     }
+
+    File file = new File(currentLoadedPicture.getPath() + " (copy)");
+    saveImage(file, currentImage);
   }
 
   void exShow() {
@@ -239,22 +234,20 @@ public class Program extends JFrame
   }
 
   File[] getImagesFromDirectory(File dir) {
-    String[] extensions = {".png",".jpg",".jpeg",".bmp"};
-    if(dir.isDirectory()) {
-      FileFilter filter = file -> {
-        for (String e: extensions) {
-          if (file.getName().toLowerCase().endsWith(e))
-            return true;
-        }
-        return false;
-      };
-
-      return dir.listFiles(filter);
-    }
-    else {
+    String[] extensions = {".png", ".jpg", ".jpeg", ".bmp"};
+    if (!dir.isDirectory()) {
       System.out.println("Path has to lead to a directory");
-      return new File[] {};
+      return new File[]{};
     }
+
+    FileFilter filter = file -> {
+      for (String e : extensions) {
+        if (file.getName().toLowerCase().endsWith(e))
+          return true;
+      }
+      return false;
+    };
+    return dir.listFiles(filter);
   }
 
   BufferedImage loadImageFromFile(File file) {
@@ -265,7 +258,7 @@ public class Program extends JFrame
     catch (IOException e) {
       System.out.println("Error: Could not read the image from " + file.getName());
     }
-    return  image;
+    return image;
   }
 
   void setImage(BufferedImage image) {
