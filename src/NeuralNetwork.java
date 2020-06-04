@@ -16,8 +16,8 @@ public class NeuralNetwork {
   static final float E = 0.1f;
   static final int N = 3;
 
-  public NeuralNetwork(int count, int[] sizes) {
-    layers = new Neuron[count][];
+  public NeuralNetwork(int[] sizes) {
+    layers = new Neuron[sizes.length][];
     sizes = Arrays.copyOf(sizes, sizes.length + 1);
 
     for (int i = 0; i < layers.length; i++) {
