@@ -47,7 +47,7 @@ public class Program extends JFrame
             "pf", this::exProcessFolder
     );
     functionsWithoutParams = Map.of(
-            "help", this::exShow,
+            "help", this::exHelp,
             "show", this::exShow,
             "sp", this::exSavePicture
             );
@@ -207,6 +207,16 @@ public class Program extends JFrame
   void exShow() {
     setVisible(true);
     setImage(currentImage);
+  }
+
+  void exHelp() {
+    println("List of commands: \n" +
+            "lw - load weights \n" +
+            "sw - save weights \n" +
+            "process - process picture \n" +
+            "train - train on sets of images \n" +
+            "pf - process folder \n" +
+            "sp - save processed picture \n");
   }
 
   void saveImage(File file, BufferedImage image) {
