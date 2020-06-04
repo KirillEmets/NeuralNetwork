@@ -27,13 +27,13 @@ help | help | help
   
 *pairs of pictures must have the same name and resolution.
 
-### How to run
+## How to run
 - Download Network.jar from out folder and run it with terminal (java -jar Network.jar)  
 Or
 - Download production/Network folder and run Program class with terminal (java Program)  
 Java se version 11 or higher required.
    
-## Try to use it
+### Try to use it
 There are Inputs and Outputs folders and some pictures in it.
 Run the program and then use:  
 `train Inputs Outputs 5`  
