@@ -1,6 +1,0 @@
-
-X	java:S110"<This class has 6 parents which is greater than 5 authorized.(ÒªÔ8Ó±‘æ¥.
-o
-java:S3776~"RRefactor this method to reduce its Cognitive Complexity from 21 to the 15 allowed.(Ù°Á8È·Ã¦.
-Ÿ
-java:S1186²"€Add a nested comment explaining why this method is empty, throw an UnsupportedOperationException or complete the implementation.(Ò¸ùÒ8È·Ã¦.
