@@ -9,7 +9,7 @@ Name | Parameters | Return | Desription
 processPicture | float[][][] picture | float[][][] | divides picture on pixels and calculates the result.
 trainOnPicure | float[][][] inputPic, float[][][] outputPic | void | uses backPropagation method to train network.
 backPropagation | float[] inputs, float[] idealOutputs | void | calculates error and changes weights based on it.
-getInputForPixel | int sx, int sy, float[][][] picture | float[] | takes all pixels around the current one and makes an array of inputs out of them
+getInputForPixel | int x, int y, float[][][] picture | float[] | takes all pixels around the current one and makes an array of inputs out of them
 ## Program
 Main part of the program that contains ui and file processing.  
 At the beginnig program initializes the network and sets all the necessary settings. Then it uses `getCommand` method to get command from the terminal and executes it with `execute`.
@@ -20,11 +20,22 @@ lw | load weighs (network config) from file | lw *'path'*
 sw | save weights to file | sw *'path'*
 process | process picture | process *'path'*
 train | train network on two sets of pictures containig in two folders* N times | train *'input folder path'* *'output folder path'* '*N*'
-sp | save picture as file | *not yet*
-processDir | process all picters in folder | *not yet*
+pf | process all picters in folder | pf *'path to folder'*
+sp | save picture as file | sp
 show | show picture in window | show
 help | help | help
   
 *pairs of pictures must have the same name and resolution.
 
-> To be continued
+## How to run
+- Download Network.jar from out folder and run it with terminal (java -jar Network.jar)  
+Or
+- Download production/Network folder and run Program class with terminal (java Program)  
+Java se version 11 or higher required.
+   
+### Try to use it
+There are Inputs and Outputs folders and some pictures in it.
+Run the program and then use:  
+`train Inputs Outputs 5`  
+`process (x).jpg`  
+`show`
