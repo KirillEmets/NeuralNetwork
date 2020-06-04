@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -6,18 +7,18 @@ import java.util.logging.Logger;
 
 public class NeuralNetwork {
   static Logger log = Logger.getLogger(NeuralNetwork.class.getName());
-  private Neuron[] inputLayer;
-  private Neuron[] hiddenLayer;
-  private Neuron[] hiddenLayer2;
-  private Neuron[] outputLayer;
+  private Neuron[][] layers;
+  public Neuron[] getOutputLayer() {
+    return layers[layers.length - 1];
+  }
 
   static final float A = 0.0f;
   static final float E = 0.1f;
   static final int N = 3;
 
-  public NeuralNetwork(int inputCount, int hiddenCount, int hiddenCount2, int outputCount) {
-    int[] sizes = new int[] {inputCount + 1, hiddenCount, hiddenCount2, outputCount, 0};
-    Neuron[][] layers = new Neuron[sizes.length][];
+  public NeuralNetwork(int count, int[] sizes) {
+    layers = new Neuron[count][];
+    sizes = Arrays.copyOf(sizes, sizes.length + 1);
 
     for (int i = 0; i < layers.length; i++) {
       layers[i] = new Neuron[sizes[i]];
@@ -25,21 +26,14 @@ public class NeuralNetwork {
         layers[i][j] = new Neuron(j, sizes[i+1]);
       }
     }
-
-    inputLayer = layers[0];
-    hiddenLayer = layers[1];
-    hiddenLayer2 = layers[2];
-    outputLayer = layers[3];
   }
 
   private float[] calculateOutputs(float[] input) {
-    float[] outputs = new float[outputLayer.length];
+    float[] outputs = new float[getOutputLayer().length];
 
     for (int i = 0; i < input.length; i++) { //fill inputLayer output values
-      inputLayer[i].output = input[i];
+      layers[0][i].output = input[i];
     }
-
-    Neuron[][] layers = new Neuron[][]{inputLayer, hiddenLayer, hiddenLayer2, outputLayer};
 
     for (int i = 1; i < layers.length; i++) {
       for (Neuron n: layers[i]) {
@@ -47,8 +41,8 @@ public class NeuralNetwork {
       }
     }
 
-    for (int i = 0; i < outputLayer.length; i++) {
-      outputs[i] = outputLayer[i].output;
+    for (int i = 0; i < getOutputLayer().length; i++) {
+      outputs[i] = getOutputLayer()[i].output;
     }
 
     return outputs;
@@ -75,23 +69,22 @@ public class NeuralNetwork {
 
   private void backPropagation(float[] inputs, float[] idealOutputs) {
     float[] outs = calculateOutputs(inputs);
-    for (int i = 0; i < outputLayer.length; i++) {
-      outputLayer[i].delta = (idealOutputs[i] - outs[i]) * activationDerivative(outs[i]);
+    for (int i = 0; i < getOutputLayer().length; i++) {
+      getOutputLayer()[i].delta = (idealOutputs[i] - outs[i]) * activationDerivative(outs[i]);
     }
 
     float grad;
     float delta;
     float sum;
 
-    Neuron[][] layers = new Neuron[][]{outputLayer, hiddenLayer2, hiddenLayer, inputLayer};
-    for (int l = 1; l < layers.length; l++) {
+    for (int l = layers.length - 2; l >= 0; l--) {
       for (Neuron neuron : layers[l]) {
         sum = 0;
-        for (int j = 0; j < layers[l-1].length; j++) {
-          sum += neuron.weights[j] * layers[l-1][j].delta ;
+        for (int j = 0; j < layers[l+1].length; j++) {
+          sum += neuron.weights[j] * layers[l+1][j].delta ;
 
-          grad = neuron.output * layers[l-1][j].delta;
-          delta = E*grad + A *neuron.lastWeightsChanges[j];
+          grad = neuron.output * layers[l+1][j].delta;
+          delta = E*grad + A*neuron.lastWeightsChanges[j];
           neuron.lastWeightsChanges[j] = delta;
           neuron.weights[j] += delta;
         }
@@ -131,10 +124,7 @@ public class NeuralNetwork {
 
   public boolean saveWeights(File file) {
     try(ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-      oos.writeObject(inputLayer);
-      oos.writeObject(hiddenLayer);
-      oos.writeObject(hiddenLayer2);
-      oos.writeObject(outputLayer);
+      oos.writeObject(layers);
     }
     catch (IOException e) {
       log.log(Level.SEVERE, "Could not write the weights", e);
@@ -145,10 +135,7 @@ public class NeuralNetwork {
 
   public boolean loadWeights(File file) {
     try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-      inputLayer = (Neuron[]) ois.readObject();
-      hiddenLayer = (Neuron[]) ois.readObject();
-      hiddenLayer2 = (Neuron[]) ois.readObject();
-      outputLayer = (Neuron[]) ois.readObject();
+      layers = (Neuron[][]) ois.readObject();
     }
     catch(IOException | ClassNotFoundException e) {
       log.log(Level.SEVERE, "Could not load the weights", e);

@@ -52,7 +52,7 @@ public class Program extends JFrame
             "sp", this::exSavePicture
             );
 
-    network = new NeuralNetwork(N * N * 3, 10, 10, 3);
+    network = new NeuralNetwork(4, new int[]{N * N * 3, 10, 10, 3});
     getCommand();
   }
 
