@@ -97,26 +97,26 @@ public class NeuralNetwork {
     return x * (1 - x);
   }
 
-  private float[] getInputForPixel(int sx, int sy, float[][][] picture) {
+  private float[] getInputForPixel(int x, int y, float[][][] picture) {
     float[] input = new float[N*N*3];
-    int px;
-    int py;
-    int k;
-    for (int x = -N/2; x < N/2f; x++) {
-      for (int y = -N/2; y < N/2f; y++) {
-        px = sx + x;
-        py = sy + y;
+    int currentX;
+    int currentY;
+    int indexInInput;
+    for (int i = -N/2; i < N/2f; i++) {
+      for (int j = -N/2; j < N/2f; j++) {
+        currentX = x + i;
+        currentY = y + j;
 
-        if(px < 0 || px >= picture.length)
-          px = sx - x;
-        if(py < 0 || py >= picture[0].length)
-          py = sy - y;
+        if(currentX < 0 || currentX >= picture.length)
+          currentX = x - i;
+        if(currentY < 0 || currentY >= picture[0].length)
+          currentY = y - j;
 
-        k = x + N/2 + (y + N/2) * N;
+        indexInInput = i + N/2 + (j + N/2) * N;
 
-        input[k*3] = picture[px][py][0];
-        input[k*3+1] = picture[px][py][1];
-        input[k*3+2] = picture[px][py][2];
+        input[indexInInput*3] = picture[currentX][currentY][0];
+        input[indexInInput*3+1] = picture[currentX][currentY][1];
+        input[indexInInput*3+2] = picture[currentX][currentY][2];
       }
     }
     return input;
