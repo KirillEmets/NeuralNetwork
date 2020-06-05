@@ -67,6 +67,7 @@ public class Program extends JFrame
     execute(command);
   }
 
+  // выполняю введенную команду (коллекция с ссылками на методы выше)
   void execute(String[] command) {
     if(functionsWithParams.containsKey(command[0])) {
       functionsWithParams.get(command[0]).accept(command);
@@ -109,6 +110,7 @@ public class Program extends JFrame
     println("Weights saved.");
   }
 
+  // загружаю изображение и кидаю в нейросеть
   void exProcess(String[] command) {
     if (command.length < 2) {
       println("Picture path is required. Use 'process *path*'.");
@@ -125,6 +127,7 @@ public class Program extends JFrame
     }
   }
 
+  // подтягиваю все изображения из папки и обрабатываю их
   void exProcessFolder(String[] command) {
     if (command.length < 2) {
       println("Folder path is required. Use 'pf *path to folder*'.");
@@ -154,6 +157,7 @@ public class Program extends JFrame
     println("Done.");
   }
 
+  // нахожу пары фотографий в папках и передаю их сети для тренировки
   void exTrain(String[] command) {
     if (command.length < 4) {
       println("Use 'train *folder with inputs* *folder with outputs* *count of iterations*'.");
@@ -237,6 +241,7 @@ public class Program extends JFrame
     return -1;
   }
 
+  // сравниваю размеры изображений
   boolean checkForCompatibility(float[][][] a, float[][][] b) {
     return (a.length == b.length && a[0].length == b[0].length);
   }
