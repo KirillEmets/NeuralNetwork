@@ -34,8 +34,8 @@ Or
 Java se version 11 or higher required.
    
 ### Try to use it
-There are Inputs and Outputs folders and some pictures in it.
-Run the program and then use:  
+There are Inputs folder, Outputs folder and some pictures in picturesForTest.
+Run the program there and then use:  
 `train Inputs Outputs 5`  
 `process (x).jpg`  
 `show`
