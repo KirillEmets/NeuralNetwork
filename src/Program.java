@@ -120,8 +120,8 @@ public class Program extends JFrame
     File file = new File(command[1]);
     BufferedImage image = loadImageFromFile(file);
     if (image != null) {
-      float[][][] picArray = network.processPicture(convertImageToPixelArray(image));
-      currentImage = convertPixelArrayToImage(picArray);
+      ArrayPicture picArray = network.processPicture(new ArrayPicture(image));
+      currentImage = picArray.toBufferedImage();
       currentLoadedPicture = file;
       println("Image processed.");
     }
@@ -150,9 +150,9 @@ public class Program extends JFrame
     BufferedImage loadedImage = null;
     for (File file : images) {
       loadedImage = loadImageFromFile(file);
-      float[][][] pic = network.processPicture(convertImageToPixelArray(loadedImage));
+      ArrayPicture pic = network.processPicture(new ArrayPicture(loadedImage));
       File toSave = new File(newFolder.getPath(), file.getName());
-      saveImage(toSave, convertPixelArrayToImage(pic));
+      saveImage(toSave, pic.toBufferedImage());
     }
     println("Done.");
   }
@@ -174,8 +174,8 @@ public class Program extends JFrame
     File[] inputImages = getImagesFromDirectory(new File(command[1]));
     File[] outputImages = getImagesFromDirectory(new File(command[2]));
 
-    float[][][] inputPicture;
-    float[][][] outputPicture;
+    ArrayPicture inputPicture;
+    ArrayPicture outputPicture;
     println("Training started");
     for (int c = 0; c < count; c++) {
       int i;
@@ -183,8 +183,8 @@ public class Program extends JFrame
         println(file.getName());
         i = findFileWithName(outputImages, file.getName());
         if (i != -1) {
-          inputPicture = convertImageToPixelArray(loadImageFromFile(file));
-          outputPicture = convertImageToPixelArray(loadImageFromFile(outputImages[i]));
+          inputPicture = new ArrayPicture(loadImageFromFile(file));
+          outputPicture = new ArrayPicture(loadImageFromFile(outputImages[i]));
           if (checkForCompatibility(inputPicture, outputPicture)) {
             network.trainOnPicture(inputPicture, outputPicture);
           } else {
@@ -242,8 +242,8 @@ public class Program extends JFrame
   }
 
   // сравниваю размеры изображений
-  boolean checkForCompatibility(float[][][] a, float[][][] b) {
-    return (a.length == b.length && a[0].length == b[0].length);
+  boolean checkForCompatibility(ArrayPicture a, ArrayPicture b) {
+    return (a.getWidth() == b.getWidth() && a.getHeight() == b.getHeight());
   }
 
   void println(String text) {
@@ -283,49 +283,5 @@ public class Program extends JFrame
       ImageIcon icon = new ImageIcon(image);
       lbl.setIcon(icon);
     }
-  }
-
-  float[][][] convertImageToPixelArray(BufferedImage image) {
-    if(image == null) {
-      return null;
-    }
-    final WritableRaster r = image.getRaster();
-    final int width = r.getWidth();
-    final int height = r.getHeight();
-    int count = width*height;
-
-    float[] rawPixels = new float[count * 3];
-    r.getPixels(0, 0, width, height, rawPixels);
-
-    float[][][] pixels = new float[width][height][3];
-    for (int i = 0; i < count; i++) {
-      pixels[i % width][i / width][0] = (rawPixels[i * 3]) / 255f;
-      pixels[i % width][i / width][1] = (rawPixels[i * 3 + 1]) / 255f;
-      pixels[i % width][i / width][2] = (rawPixels[i * 3 + 2]) / 255f;
-    }
-
-    return pixels;
-  }
-
-  BufferedImage convertPixelArrayToImage(float[][][] arrayPic) {
-    int w = arrayPic.length;
-    int h = arrayPic[0].length;
-    int[] rawPixels = new int[w * h * 3];
-
-    for (int j = 0; j < h; j++) {
-      for (int i = 0; i < w; i++) {
-        rawPixels[(i + j * w) * 3] = (int) (arrayPic[i][j][0] * 255);
-        rawPixels[(i + j * w) * 3 + 1] = (int) (arrayPic[i][j][1] * 255);
-        rawPixels[(i + j * w) * 3 + 2] = (int) (arrayPic[i][j][2] * 255);
-      }
-    }
-
-    DataBufferInt buffer = new DataBufferInt(rawPixels, rawPixels.length);
-    int[] bandMasks = {0x00ff0000, 0x0000ff00, 0x000000ff};
-    WritableRaster raster = Raster.createPackedRaster(buffer, w, h, w, bandMasks, null);
-    raster.setPixels(0,0, w, h, rawPixels);
-    BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_BGR);
-    image.setData(raster);
-    return image;
   }
 }

@@ -48,21 +48,21 @@ public class NeuralNetwork {
     return outputs;
   }
 
-  public float[][][] processPicture(float[][][] picture) {
-    float[][][] result = new float[picture.length][picture[0].length][3];
+  public ArrayPicture processPicture(ArrayPicture picture) {
+    float[][][] result = new float[picture.getWidth()][picture.getHeight()][3];
 
     for (int i = 0; i < result.length; i++) {
       for (int j = 0; j < result[0].length; j++) {
         result[i][j] = calculateOutputs(getInputForPixel(i, j, picture));
       }
     }
-    return result;
+    return new ArrayPicture(result);
   }
 
-  public void trainOnPicture(float[][][] inputPic, float[][][] outputPic) {
-    for (int i = 0; i < outputPic.length; i++) {
-      for (int j = 0; j < outputPic[0].length; j++) {
-        backPropagation(getInputForPixel(i, j, inputPic), outputPic[i][j]);
+  public void trainOnPicture(ArrayPicture inputPic, ArrayPicture outputPic) {
+    for (int i = 0; i < outputPic.getWidth(); i++) {
+      for (int j = 0; j < outputPic.getHeight(); j++) {
+        backPropagation(getInputForPixel(i, j, inputPic), outputPic.getPixels()[i][j]);
       }
     }
   }
@@ -97,7 +97,7 @@ public class NeuralNetwork {
     return x * (1 - x);
   }
 
-  private float[] getInputForPixel(int x, int y, float[][][] picture) {
+  private float[] getInputForPixel(int x, int y, ArrayPicture picture) {
     float[] input = new float[N*N*3];
     int currentX;
     int currentY;
@@ -107,16 +107,16 @@ public class NeuralNetwork {
         currentX = x + i;
         currentY = y + j;
 
-        if(currentX < 0 || currentX >= picture.length)
+        if(currentX < 0 || currentX >= picture.getWidth())
           currentX = x - i;
-        if(currentY < 0 || currentY >= picture[0].length)
+        if(currentY < 0 || currentY >= picture.getHeight())
           currentY = y - j;
 
         indexInInput = i + N/2 + (j + N/2) * N;
 
-        input[indexInInput*3] = picture[currentX][currentY][0];
-        input[indexInInput*3+1] = picture[currentX][currentY][1];
-        input[indexInInput*3+2] = picture[currentX][currentY][2];
+        input[indexInInput*3] = picture.getPixels()[currentX][currentY][0];
+        input[indexInInput*3+1] = picture.getPixels()[currentX][currentY][1];
+        input[indexInInput*3+2] = picture.getPixels()[currentX][currentY][2];
       }
     }
     return input;
