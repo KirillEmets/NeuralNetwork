@@ -63,17 +63,18 @@ public class Program extends JFrame
       return;
     }
 
-    String[] command = console.readLine().split(" ");
-    execute(command);
+    String[] args = console.readLine().split(" ");
+    execute(args);
   }
 
   // выполняю введенную команду (коллекция с ссылками на методы выше)
-  void execute(String[] command) {
-    if(functionsWithParams.containsKey(command[0])) {
-      functionsWithParams.get(command[0]).accept(command);
+  void execute(String[] args) {
+    String command = args[0];
+    if(functionsWithParams.containsKey(command)) {
+      functionsWithParams.get(command).accept(args);
     }
-    else if(functionsWithoutParams.containsKey(command[0])) {
-      functionsWithoutParams.get(command[0]).run();
+    else if(functionsWithoutParams.containsKey(command)) {
+      functionsWithoutParams.get(command).run();
     }
     else {
       println("No such function, use help.");
@@ -82,18 +83,18 @@ public class Program extends JFrame
     getCommand();
   }
 
-  void exLoadWeights(String[] command) {
-    if (command.length < 2) {
+  void exLoadWeights(String[] args) {
+    if (args.length < 2) {
       println("Load path is required. Use 'load *path*'");
       return;
     }
-    if (network.loadWeights(new File(command[1]))) {
+    if (network.loadWeights(new File(args[1]))) {
       println("Weighs loaded.");
     }
   }
 
-  void exSaveWeights(String[] command) {
-    if (command.length < 2) {
+  void exSaveWeights(String[] args) {
+    if (args.length < 2) {
       if (currentLoadedWeights != null) {
         println("Want to save to the current loaded file? y/n");
         String s = console.readLine();
@@ -106,18 +107,18 @@ public class Program extends JFrame
       return;
     }
 
-    network.saveWeights(new File(command[1]));
+    network.saveWeights(new File(args[1]));
     println("Weights saved.");
   }
 
   // загружаю изображение и кидаю в нейросеть
-  void exProcess(String[] command) {
-    if (command.length < 2) {
+  void exProcess(String[] args) {
+    if (args.length < 2) {
       println("Picture path is required. Use 'process *path*'.");
       return;
     }
 
-    File file = new File(command[1]);
+    File file = new File(args[1]);
     BufferedImage image = loadImageFromFile(file);
     if (image != null) {
       ArrayPicture picArray = network.processPicture(new ArrayPicture(image));
@@ -128,13 +129,13 @@ public class Program extends JFrame
   }
 
   // подтягиваю все изображения из папки и обрабатываю их
-  void exProcessFolder(String[] command) {
-    if (command.length < 2) {
+  void exProcessFolder(String[] args) {
+    if (args.length < 2) {
       println("Folder path is required. Use 'pf *path to folder*'.");
       return;
     }
 
-    File folder = new File(command[1]);
+    File folder = new File(args[1]);
     if(!folder.isDirectory()) {
       println("Path must lead to a directory.");
       return;
@@ -158,21 +159,21 @@ public class Program extends JFrame
   }
 
   // нахожу пары фотографий в папках и передаю их сети для тренировки
-  void exTrain(String[] command) {
-    if (command.length < 4) {
+  void exTrain(String[] args) {
+    if (args.length < 4) {
       println("Use 'train *folder with inputs* *folder with outputs* *count of iterations*'.");
       return;
     }
     int count = 0;
     try {
-      count = Integer.parseInt(command[3]);
+      count = Integer.parseInt(args[3]);
     } catch (Exception e) {
       println("4th parameter must be a number.");
       return;
     }
 
-    File[] inputImages = getImagesFromDirectory(new File(command[1]));
-    File[] outputImages = getImagesFromDirectory(new File(command[2]));
+    File[] inputImages = getImagesFromDirectory(new File(args[1]));
+    File[] outputImages = getImagesFromDirectory(new File(args[2]));
 
     ArrayPicture inputPicture;
     ArrayPicture outputPicture;
